@@ -64,6 +64,18 @@ RUN if [ "$ENABLE_PYTORCH_UPGRADE" = "true" ]; then \
       uv pip install --force-reinstall torch torchvision torchaudio --index-url ${PYTORCH_INDEX_URL}; \
     fi
 
+# Custom nodes required by the LettuceAI Krea2 identity-edit workflow.
+# rgthree-comfy and comfyui-image-saver are fine from the official registry.
+# comfyui-krea2edit MUST come straight from GitHub's v1.2.5 tag, NOT the
+# registry: the registry is capped at v1.2.3, which doesn't accept the
+# source_image/source_image_b inputs and whose internal sampler wrapper
+# crashes against newer ComfyUI cores ("wrapper() takes from 4 to 6
+# positional arguments but 7 were given"). v1.2.4/v1.2.5 fix both issues
+# but were never republished to the registry.
+RUN comfy node install --mode=remote rgthree-comfy comfyui-image-saver \
+    && cd /comfyui/custom_nodes \
+    && git clone --branch v1.2.5 --depth 1 https://github.com/lbouaraba/comfyui-krea2edit.git
+
 # comfy-cli installs ComfyUI into its own workspace venv (/comfyui/.venv), but
 # start.sh launches ComfyUI with /opt/venv's python. That mismatch leaves the
 # launch venv missing ComfyUI's runtime deps (e.g. sqlalchemy, pulled in by
